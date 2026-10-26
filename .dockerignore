@@ -1,0 +1,13 @@
+# 忽略本地产物与运行时数据，避免把它们拷进 Docker 构建上下文
+node_modules/
+**/node_modules/
+frontend/dist/
+backend/web/dist/
+data/
+backend/data/
+.tools/
+.pnpm-store/
+.git/
+*.log
+*.exe
+*.tsbuildinfo

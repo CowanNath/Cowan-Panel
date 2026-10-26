@@ -22,20 +22,27 @@ docker compose up -d
 
 ### 本地开发 / 构建
 
-依赖：Node 20+ / pnpm、Go 1.23+（Windows 可放入 `.tools/go`，`build.ps1` 会自动使用）
+依赖：Node 20.19+ / pnpm 11、Go 1.23+（Windows 可放入 `.tools/go`，`build.ps1` 会自动使用）
 
 ```powershell
 .\build.ps1            # 构建前端 + 单二进制 backend\cowan-panel.exe
 .\backend\cowan-panel.exe   # 默认 127.0.0.1:8100，数据在 ./data
 ```
 
-前端单独开发：
+前端单独构建：
 
 ```powershell
 cd frontend
 pnpm install
-pnpm dev    # 已配置代理到 127.0.0.1:8100
+pnpm build        # tsc 类型检查 + esbuild 打包，产物在 dist/
+pnpm test:build   # esbuild 跨平台解析逻辑的单元测试
+pnpm dev          # 开发模式（Vite，代理到 127.0.0.1:8100）
 ```
+
+> 为什么不用 `vite build`：部分受限环境禁止 Node 子进程使用管道 stdio，esbuild 的 JS service 会 EPERM；
+> [tools/build.mjs](frontend/tools/build.mjs) 改用 esbuild CLI（继承 stdio），并按平台自动解析原生二进制：
+> `@esbuild/win32-x64`（Windows）、`@esbuild/linux-x64|arm64`（容器）、`@esbuild/darwin-*`（macOS）。
+> 也支持用环境变量 `ESBUILD_BINARY_PATH` 显式指定。
 
 ### 环境变量
 

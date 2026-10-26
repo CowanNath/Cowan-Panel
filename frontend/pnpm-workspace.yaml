@@ -1,2 +1,10 @@
+# pnpm 11 起设置项从 package.json 的 "pnpm" 字段迁移到这里
+
+# esbuild 的原生二进制由可选依赖 @esbuild/<platform>-<arch> 提供，
+# 无需执行其安装脚本（某些受限环境下该脚本会因管道限制失败）
 allowBuilds:
   esbuild: false
+
+# 说明：lockfile 已包含 esbuild 各平台的可选依赖条目，
+# 因此 Windows 上生成的 lock 可直接在 Linux 容器中 --frozen-lockfile 安装，
+# 无需额外配置 supportedArchitectures（全平台安装反而会拖慢/卡住本地安装）。
