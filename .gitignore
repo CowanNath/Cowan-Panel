@@ -1,0 +1,29 @@
+# dependencies
+node_modules/
+frontend/node_modules/
+
+# build output
+frontend/dist/
+backend/web/dist/*
+!backend/web/dist/.gitkeep
+backend/server.exe
+backend/cowan-panel
+backend/cowan-panel.exe
+
+# runtime data
+data/
+backend/data/
+
+# go
+.tools/
+
+# pnpm 鏈湴缂撳瓨
+.pnpm-store/
+
+# misc
+*.log
+.DS_Store
+Thumbs.db
+
+# TS 增量构建缓存
+*.tsbuildinfo

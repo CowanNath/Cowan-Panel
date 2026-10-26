@@ -1,0 +1,11 @@
+services:
+  cowan-panel:
+    build: .
+    container_name: cowan-panel
+    restart: unless-stopped
+    ports:
+      - "8100:8100"
+    volumes:
+      - ./data:/app/data
+    environment:
+      - TZ=Asia/Shanghai
