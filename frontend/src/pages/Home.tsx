@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { DndContext, DragOverlay, PointerSensor, useSensor, useSensors, type DragEndEvent, type DragStartEvent } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
-import { SettingOutlined, EditOutlined, DeleteOutlined, LinkOutlined, ExportOutlined } from '@ant-design/icons';
+import { SettingOutlined, EditOutlined, DeleteOutlined, LinkOutlined, ExportOutlined, ThunderboltOutlined } from '@ant-design/icons';
 import { Modal, Spin, message as antdMessage } from 'antd';
 import { usePanelStore } from '../stores/panel';
 import { GroupBlock } from '../components/GroupBlock';
@@ -27,7 +27,7 @@ const Clock: React.FC = () => {
 export const Home: React.FC = () => {
   const navigate = useNavigate();
   const isDark = useIsDark();
-  const { loading, groups, settings, load, applyStatus, reorderGroups, reorderItems, removeItem } =
+  const { loading, groups, settings, load, applyStatus, reorderGroups, reorderItems, removeItem, editItem, recheckItem } =
     usePanelStore();
   const [activeItem, setActiveItem] = useState<{ id: number; name: string } | null>(null);
   // 右键菜单状态
@@ -267,6 +267,31 @@ export const Home: React.FC = () => {
             }}
           >
             <ExportOutlined /> 新标签打开
+          </button>
+          <button
+            className="ctx-item"
+            onClick={async () => {
+              const next = !ctx.item.checkEnabled;
+              const target = ctx.item;
+              setCtx(null);
+              try {
+                await editItem(target.id, { checkEnabled: next });
+                if (next) {
+                  if (!settings.probeEnabled) {
+                    antdMessage.warning('已在设置中关闭在线探测总开关，需先开启');
+                  } else {
+                    await recheckItem(target.id);
+                    antdMessage.success('已开启在线探测');
+                  }
+                } else {
+                  antdMessage.success('已关闭在线探测');
+                }
+              } catch {
+                antdMessage.error('操作失败');
+              }
+            }}
+          >
+            <ThunderboltOutlined /> {ctx.item.checkEnabled ? '关闭在线探测' : '开启在线探测'}
           </button>
           <button className="ctx-item danger" onClick={() => deleteItem(ctx.item)}>
             <DeleteOutlined /> 删除

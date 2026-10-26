@@ -131,11 +131,41 @@ const BasicTab: React.FC = () => {
           optionType="button"
         />
       </Form.Item>
-      <Form.Item name="probeEnabled" label="在线探测" valuePropName="checked">
-        <Switch checkedChildren="开" unCheckedChildren="关" />
+      <Form.Item
+        name="probeEnabled"
+        label="在线探测"
+        valuePropName="checked"
+        extra="开启后，只有卡片自己在「编辑」里打开了「在线探测」，才会显示状态灯"
+      >
+        <Switch
+          checkedChildren="开"
+          unCheckedChildren="关"
+          onChange={async (checked) => {
+            // 开关类设置立即保存，避免以为已生效
+            try {
+              await setSettings({ ...settings, ...form.getFieldsValue(), probeEnabled: checked });
+              antdMessage.success(checked ? '已开启在线探测' : '已关闭在线探测');
+            } catch {
+              antdMessage.error('保存失败');
+            }
+          }}
+        />
       </Form.Item>
-      <Form.Item name="probeInterval" label="探测间隔（秒，后端定时器使用）">
-        <InputNumber min={10} max={3600} style={{ width: 160 }} />
+      <Form.Item name="probeInterval" label="探测间隔（秒）">
+        <InputNumber
+          min={10}
+          max={3600}
+          style={{ width: 160 }}
+          onChange={async (v) => {
+            const n = Number(v) || 60;
+            try {
+              await setSettings({ ...settings, ...form.getFieldsValue(), probeInterval: n });
+              antdMessage.success('探测间隔已保存');
+            } catch {
+              antdMessage.error('保存失败');
+            }
+          }}
+        />
       </Form.Item>
       <Space>
         <Button type="primary" onClick={save}>

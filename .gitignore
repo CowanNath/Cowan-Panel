@@ -27,3 +27,6 @@ Thumbs.db
 
 # TS 增量构建缓存
 *.tsbuildinfo
+
+# 编辑器/构建临时文件
+*~
