@@ -8,19 +8,17 @@ export const DEFAULT_SETTINGS: Settings = {
   wallpaper: '',
   groupLayout: 'stack',
   proxy: '',
-  probeEnabled: false,
-  probeInterval: 60,
+  probeViaProxy: false,
 };
 
 // 把后端返回的设置统一归一化为前端语义类型（容忍字符串布尔/数字）
 const normalizeSettings = (raw: Partial<Settings>): Settings => ({
   siteTitle: String(raw.siteTitle ?? ''),
-  theme: (raw.theme === 'light' || raw.theme === 'dark' ? raw.theme : 'auto'),
+  theme: raw.theme === 'light' || raw.theme === 'dark' ? raw.theme : 'auto',
   wallpaper: raw.wallpaper ? String(raw.wallpaper) : '',
   groupLayout: raw.groupLayout === 'columns' ? 'columns' : 'stack',
   proxy: raw.proxy ? String(raw.proxy) : '',
-  probeEnabled: raw.probeEnabled === true || (raw.probeEnabled as unknown) === 'true',
-  probeInterval: Number(raw.probeInterval) > 0 ? Number(raw.probeInterval) : 60,
+  probeViaProxy: raw.probeViaProxy === true || (raw.probeViaProxy as unknown) === 'true',
 });
 
 interface PanelState {
@@ -32,8 +30,8 @@ interface PanelState {
   setSettings: (s: Settings, persist?: boolean) => Promise<void>;
   applyStatus: (list: StatusEntry[]) => void;
 
-  addGroup: (name: string) => Promise<void>;
-  renameGroup: (id: number, name: string) => Promise<void>;
+  addGroup: (name: string, lan?: boolean) => Promise<void>;
+  renameGroup: (id: number, name: string, lan?: boolean) => Promise<void>;
   removeGroup: (id: number) => Promise<void>;
   reorderGroups: (ids: number[]) => Promise<void>;
 
@@ -67,15 +65,15 @@ export const usePanelStore = create<PanelState>((set, get) => ({
       return { statusMap: map };
     }),
 
-  addGroup: async (name) => {
-    const g = await apiClient.createGroup({ name });
+  addGroup: async (name, lan) => {
+    const g = await apiClient.createGroup({ name, lan });
     set((st) => ({ groups: [...st.groups, { ...g, items: [] }] }));
   },
 
-  renameGroup: async (id, name) => {
-    await apiClient.updateGroup(id, { name });
+  renameGroup: async (id, name, lan) => {
+    await apiClient.updateGroup(id, { name, lan });
     set((st) => ({
-      groups: st.groups.map((g) => (g.id === id ? { ...g, name } : g)),
+      groups: st.groups.map((g) => (g.id === id ? { ...g, name, lan } : g)),
     }));
   },
 

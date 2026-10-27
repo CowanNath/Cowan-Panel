@@ -36,21 +36,31 @@ func CreateGroup(c *gin.Context) {
 	c.JSON(http.StatusOK, g)
 }
 
-// UpdateGroup PUT /api/groups/:id
+// UpdateGroup PUT /api/groups/:id  部分字段更新（name / sort / lan）
 func UpdateGroup(c *gin.Context) {
 	var g model.Group
 	if err := service.DB.First(&g, c.Param("id")).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "group not found"})
 		return
 	}
-	var in model.Group
+	var in map[string]any
 	if err := c.ShouldBindJSON(&in); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	g.Name = in.Name
-	if in.Sort != 0 {
-		g.Sort = in.Sort
+	for k, v := range in {
+		switch k {
+		case "name":
+			g.Name = fmt.Sprint(v)
+		case "sort":
+			if f, ok := v.(float64); ok {
+				g.Sort = int(f)
+			}
+		case "lan":
+			if b, ok := v.(bool); ok {
+				g.LAN = b
+			}
+		}
 	}
 	if err := service.DB.Save(&g).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})

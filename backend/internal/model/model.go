@@ -8,6 +8,7 @@ type Group struct {
 	ID        uint      `json:"id" gorm:"primaryKey"`
 	Name      string    `json:"name"`
 	Sort      int       `json:"sort"`
+	LAN       bool      `json:"lan"` // 内网分组：探测时强制直连，不走代理
 	CreatedAt time.Time `json:"createdAt"`
 }
 

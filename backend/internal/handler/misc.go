@@ -47,7 +47,7 @@ func CheckItem(c *gin.Context) {
 		}
 		target = it.URL
 	}
-	status := probe.Check(target)
+	status := probe.Check(target, "")
 	now := time.Now()
 	if body.ID != 0 {
 		service.DB.Model(&model.Item{}).Where("id = ?", body.ID).
@@ -355,6 +355,12 @@ func settingsMap() (map[string]any, error) {
 	for _, s := range sts {
 		switch s.Key {
 		case "probeEnabled":
+			if b, err := strconv.ParseBool(s.Value); err == nil {
+				out[s.Key] = b
+			} else {
+				out[s.Key] = false
+			}
+		case "probeViaProxy":
 			if b, err := strconv.ParseBool(s.Value); err == nil {
 				out[s.Key] = b
 			} else {

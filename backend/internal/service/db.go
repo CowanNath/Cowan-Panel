@@ -2,7 +2,6 @@
 package service
 
 import (
-	"log"
 	"os"
 	"path/filepath"
 
@@ -37,25 +36,26 @@ func Init() error {
 	return seedDefaults()
 }
 
-// seedDefaults 首次启动（库为空）写入默认设置。
+// seedDefaults 保证默认设置项存在（老版本升级后新增的键也会补上，不覆盖已有值）。
 func seedDefaults() error {
-	var count int64
-	if err := DB.Model(&model.Setting{}).Count(&count).Error; err != nil {
-		return err
-	}
-	if count > 0 {
-		return nil
-	}
 	defaults := []model.Setting{
 		{Key: "siteTitle", Value: "Cowan-Panel"},
 		{Key: "theme", Value: "auto"},
 		{Key: "wallpaper", Value: "/bg.jpg"}, // 内置默认壁纸（frontend/public/bg.jpg）
 		{Key: "groupLayout", Value: "stack"},
 		{Key: "proxy", Value: ""},
+		{Key: "probeViaProxy", Value: "false"}, // 外网分组探测是否走代理（内网分组始终直连）
 	}
-	if err := DB.Create(&defaults).Error; err != nil {
-		return err
+	for _, st := range defaults {
+		var cnt int64
+		if err := DB.Model(&model.Setting{}).Where("key = ?", st.Key).Count(&cnt).Error; err != nil {
+			return err
+		}
+		if cnt == 0 {
+			if err := DB.Create(&st).Error; err != nil {
+				return err
+			}
+		}
 	}
-	log.Println("[service] 已写入默认设置")
 	return nil
 }

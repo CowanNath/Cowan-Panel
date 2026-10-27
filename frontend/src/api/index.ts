@@ -7,7 +7,7 @@ export const fetchOverview = () =>
   api.get<OverviewData>('/overview').then((r) => r.data);
 
 // groups
-export const createGroup = (data: Pick<Group, 'name'>) =>
+export const createGroup = (data: Partial<Pick<Group, 'name' | 'lan'>>) =>
   api.post<Group>('/groups', data).then((r) => r.data);
 export const updateGroup = (id: number, data: Partial<Group>) =>
   api.put(`/groups/${id}`, data);

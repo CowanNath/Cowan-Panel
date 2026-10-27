@@ -17,6 +17,8 @@ export interface Group {
   id: number;
   name: string;
   sort: number;
+  /** 内网分组：探测时强制直连，不走代理 */
+  lan?: boolean;
   items: Item[];
 }
 
@@ -26,8 +28,8 @@ export interface Settings {
   wallpaper?: string | null;
   groupLayout?: 'stack' | 'columns';
   proxy?: string;
-  probeEnabled: boolean;
-  probeInterval: number;
+  /** 外网分组探测时是否也走代理（内网分组始终直连） */
+  probeViaProxy?: boolean;
 }
 
 export interface OverviewData {

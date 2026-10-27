@@ -5,7 +5,7 @@ import { SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-
 import { CSS } from '@dnd-kit/utilities';
 import { HolderOutlined } from '@ant-design/icons';
 import {
-  Button, Divider, Form, Input, Modal, Popconfirm, Radio,
+  Button, Divider, Form, Input, Modal, Popconfirm, Radio, Switch, Tag,
   Space, Spin, Tabs, Upload, message as antdMessage,
 } from 'antd';
 import {
@@ -35,14 +35,14 @@ const GroupModal: React.FC<{
   const [form] = Form.useForm();
   const { addGroup, renameGroup } = usePanelStore();
   useEffect(() => {
-    if (open) form.setFieldsValue({ name: editing?.name ?? '' });
+    if (open) form.setFieldsValue({ name: editing?.name ?? '', lan: editing?.lan ?? false });
   }, [open, editing, form]);
 
   const ok = async () => {
-    const { name } = await form.validateFields();
+    const { name, lan } = await form.validateFields();
     try {
-      if (editing) await renameGroup(editing.id, name);
-      else await addGroup(name);
+      if (editing) await renameGroup(editing.id, name, !!lan);
+      else await addGroup(name, !!lan);
       antdMessage.success('已保存');
       onClose();
     } catch {
@@ -60,6 +60,14 @@ const GroupModal: React.FC<{
       <Form form={form} layout="vertical">
         <Form.Item name="name" label="分组名称" rules={[{ required: true, message: '请输入名称' }]}>
           <Input placeholder="如：常用工具" />
+        </Form.Item>
+        <Form.Item
+          name="lan"
+          label="内网分组"
+          valuePropName="checked"
+          extra="勾选后：本组内所有卡片探测时强制直连，不会走代理（适合 NAS / 路由器 / 局域网服务）"
+        >
+          <Switch checkedChildren="内网" unCheckedChildren="外网" />
         </Form.Item>
       </Form>
     </Modal>
@@ -150,13 +158,20 @@ const NetworkTab: React.FC = () => {
   const [testing, setTesting] = useState(false);
 
   useEffect(() => {
-    form.setFieldsValue({ proxy: settings.proxy ?? '' });
-  }, [settings.proxy, form]);
+    form.setFieldsValue({
+      proxy: settings.proxy ?? '',
+      probeViaProxy: settings.probeViaProxy ?? false,
+    });
+  }, [settings.proxy, settings.probeViaProxy, form]);
 
   const save = async () => {
     const v = await form.validateFields();
     try {
-      await setSettings({ ...settings, proxy: (v.proxy ?? '').trim() });
+      await setSettings({
+        ...settings,
+        proxy: (v.proxy ?? '').trim(),
+        probeViaProxy: !!v.probeViaProxy,
+      });
       antdMessage.success('代理设置已保存');
     } catch {
       antdMessage.error('保存失败');
@@ -181,9 +196,17 @@ const NetworkTab: React.FC = () => {
         name="proxy"
         label="图标抓取代理"
         tooltip="留空则直连（不读取 Windows 系统代理）。支持 http:// 代理，例如 Clash/V2Ray 常见的 http://127.0.0.1:7890"
-        extra="仅用于抓取网站图标 favicon；在线探测始终直连，不受此设置影响。"
+        extra="用于抓取网站图标 favicon。"
       >
         <Input placeholder="http://127.0.0.1:7890（留空 = 直连）" />
+      </Form.Item>
+      <Form.Item
+        name="probeViaProxy"
+        label="在线探测走代理"
+        valuePropName="checked"
+        extra="开启后：外网分组的卡片探测时走上面的代理；内网分组始终直连（分组是否内网可在「分组与卡片」里设置）"
+      >
+        <Switch checkedChildren="开" unCheckedChildren="关" />
       </Form.Item>
       <Space>
         <Button type="primary" onClick={save}>
@@ -365,6 +388,7 @@ const ManageTab: React.FC = () => {
                     <span className="manage-name" onClick={() => setSelectedGroup(g.id)} style={{ cursor: 'pointer' }}>
                       {g.name}
                     </span>
+                    {g.lan && <Tag color="blue">内网</Tag>}
                     <span className="manage-sub" onClick={() => setSelectedGroup(g.id)} style={{ cursor: 'pointer' }}>
                       {g.items.length} 个卡片
                     </span>
