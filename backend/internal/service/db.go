@@ -52,8 +52,6 @@ func seedDefaults() error {
 		{Key: "wallpaper", Value: "/bg.jpg"}, // 内置默认壁纸（frontend/public/bg.jpg）
 		{Key: "groupLayout", Value: "stack"},
 		{Key: "proxy", Value: ""},
-		{Key: "probeInterval", Value: "60"},
-		{Key: "probeEnabled", Value: "false"},
 	}
 	if err := DB.Create(&defaults).Error; err != nil {
 		return err

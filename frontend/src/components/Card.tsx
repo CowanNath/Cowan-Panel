@@ -42,11 +42,11 @@ export const BookmarkCard: React.FC<{
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
     useSortable({ id: item.id, data: { type: 'item', groupId: item.groupId } });
   const statusMap = usePanelStore((s) => s.statusMap);
-  const probeEnabled = usePanelStore((s) => s.settings.probeEnabled);
 
-  const status = item.checkEnabled ? statusMap[item.id] ?? item.lastStatus : undefined;
-  const statusColor =
-    status === 'up' ? '#52c41a' : status === 'down' ? '#ff4d4f' : '#9e9e9e';
+  // 只在探测出确定结果（up/down）后显示状态灯
+  const status = statusMap[item.id] ?? item.lastStatus;
+  const showStatus = status === 'up' || status === 'down';
+  const statusColor = status === 'up' ? '#52c41a' : '#ff4d4f';
 
   const style: React.CSSProperties = {
     transform: CSS.Transform.toString(transform),
@@ -79,7 +79,7 @@ export const BookmarkCard: React.FC<{
           {item.description && <div className="bookmark-desc">{item.description}</div>}
         </div>
       </div>
-      {probeEnabled && item.checkEnabled && (
+      {showStatus && (
         <span className="status-dot" style={{ background: statusColor }} title={status} />
       )}
     </div>

@@ -113,9 +113,6 @@ export const ItemEditor: React.FC<{
           <Form.Item name="openInNewTab" label="新标签页打开" valuePropName="checked">
             <Switch />
           </Form.Item>
-          <Form.Item name="checkEnabled" label="在线探测" valuePropName="checked">
-            <Switch />
-          </Form.Item>
           <Form.Item name="cardBackgroundColor" label="卡片背景色">
             <Input placeholder="如 #2a2a2a6b，可选" style={{ width: 180 }} />
           </Form.Item>

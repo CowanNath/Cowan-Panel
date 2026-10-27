@@ -1,4 +1,4 @@
-// Cowan-Panel 后端服务入口：初始化数据库、注册路由、启动探测调度、优雅退出。
+// Cowan-Panel 后端服务入口：初始化数据库、注册路由、内嵌前端、优雅退出。
 package main
 
 import (
@@ -15,7 +15,6 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"cowan-panel/backend/internal/handler"
-	"cowan-panel/backend/internal/probe"
 	"cowan-panel/backend/internal/service"
 	"cowan-panel/backend/web"
 )
@@ -48,6 +47,7 @@ func main() {
 		api.PUT("/items/:id", handler.UpdateItem)
 		api.DELETE("/items/:id", handler.DeleteItem)
 		api.POST("/items/check", handler.CheckItem)
+		api.POST("/probe/all", handler.ProbeAll)
 
 		api.GET("/status", handler.GetStatus)
 		api.POST("/icons/upload", handler.UploadIcon)
@@ -93,11 +93,7 @@ func main() {
 		c.Data(http.StatusOK, "text/html; charset=utf-8", data)
 	})
 
-	// 4) 启动探测调度器
-	sched := probe.NewScheduler()
-	sched.Start()
-
-	// 5) HTTP 服务 + 优雅退出
+	// 4) HTTP 服务 + 优雅退出（在线探测改为首页手动触发，不再有后台定时器）
 	srv := &http.Server{Addr: ":" + port, Handler: r}
 	go func() {
 		log.Println("[main] Cowan-Panel 监听 :" + port)
@@ -112,7 +108,6 @@ func main() {
 	log.Println("[main] 收到退出信号，正在关闭…")
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	sched.Stop()
 	if err := srv.Shutdown(ctx); err != nil {
 		log.Println("[main] 关闭异常:", err)
 	}

@@ -25,6 +25,15 @@ export const updateItem = (id: number, data: Partial<Item>) =>
 export const deleteItem = (id: number) => api.delete(`/items/${id}`);
 export const sortItems = (ids: number[]) => api.put('/items/sort', { ids });
 export const checkItem = (id: number) => api.post('/items/check', { id });
+export const probeAll = () =>
+  api
+    .post<{
+      total: number;
+      up: number;
+      down: number;
+      items: { id: number; lastStatus: 'up' | 'down'; lastCheckedAt: string }[];
+    }>('/probe/all', {}, { timeout: 120000 })
+    .then((r) => r.data);
 
 // status
 export const fetchStatus = () =>

@@ -2,12 +2,15 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { DndContext, DragOverlay, PointerSensor, useSensor, useSensors, type DragEndEvent, type DragStartEvent } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
-import { SettingOutlined, EditOutlined, DeleteOutlined, LinkOutlined, ExportOutlined, ThunderboltOutlined } from '@ant-design/icons';
+import {
+  SettingOutlined, EditOutlined, DeleteOutlined, LinkOutlined, ExportOutlined, RadarChartOutlined,
+} from '@ant-design/icons';
 import { Modal, Spin, message as antdMessage } from 'antd';
 import { usePanelStore } from '../stores/panel';
 import { GroupBlock } from '../components/GroupBlock';
 import { ItemEditor } from '../components/ItemEditor';
 import { useIsDark } from '../theme';
+import * as apiClient from '../api';
 import type { Item } from '../types';
 
 const Clock: React.FC = () => {
@@ -27,9 +30,10 @@ const Clock: React.FC = () => {
 export const Home: React.FC = () => {
   const navigate = useNavigate();
   const isDark = useIsDark();
-  const { loading, groups, settings, load, applyStatus, reorderGroups, reorderItems, removeItem, editItem, recheckItem } =
+  const { loading, groups, settings, load, applyStatus, reorderGroups, reorderItems, removeItem } =
     usePanelStore();
   const [activeItem, setActiveItem] = useState<{ id: number; name: string } | null>(null);
+  const [probing, setProbing] = useState(false);
   // 右键菜单状态
   const [ctx, setCtx] = useState<{ x: number; y: number; item: Item } | null>(null);
   const [editor, setEditor] = useState<{ open: boolean; editing: Item | null }>({
@@ -80,25 +84,23 @@ export const Home: React.FC = () => {
     load().catch(() => undefined);
   }, [load]);
 
-  // 轮询在线状态：仅 probeEnabled
-  useEffect(() => {
-    if (!settings.probeEnabled) return;
-    let stop = false;
-    const poll = async () => {
-      try {
-        const r = await fetch('/api/status').then((r) => r.json());
-        if (!stop && Array.isArray(r)) applyStatus(r);
-      } catch {
-        /* ignore */
-      }
-    };
-    poll();
-    const t = setInterval(poll, 30_000);
-    return () => {
-      stop = true;
-      clearInterval(t);
-    };
-  }, [settings.probeEnabled, applyStatus]);
+  // 手动一键探测：点击右下角按钮时对所有卡片探测一次
+  const probeAll = async () => {
+    if (probing) return;
+    setProbing(true);
+    const hide = antdMessage.loading('正在探测所有站点…', 0);
+    try {
+      const r = await apiClient.probeAll();
+      applyStatus(r.items.map((it) => ({ id: it.id, lastStatus: it.lastStatus })));
+      hide();
+      antdMessage.success(`探测完成：在线 ${r.up}，离线 ${r.down}`);
+    } catch {
+      hide();
+      antdMessage.error('探测失败');
+    } finally {
+      setProbing(false);
+    }
+  };
 
   const sortedGroups = useMemo(
     () => [...groups].sort((a, b) => a.sort - b.sort),
@@ -268,35 +270,21 @@ export const Home: React.FC = () => {
           >
             <ExportOutlined /> 新标签打开
           </button>
-          <button
-            className="ctx-item"
-            onClick={async () => {
-              const next = !ctx.item.checkEnabled;
-              const target = ctx.item;
-              setCtx(null);
-              try {
-                await editItem(target.id, { checkEnabled: next });
-                if (next) {
-                  if (!settings.probeEnabled) {
-                    antdMessage.warning('已在设置中关闭在线探测总开关，需先开启');
-                  } else {
-                    await recheckItem(target.id);
-                    antdMessage.success('已开启在线探测');
-                  }
-                } else {
-                  antdMessage.success('已关闭在线探测');
-                }
-              } catch {
-                antdMessage.error('操作失败');
-              }
-            }}
-          >
-            <ThunderboltOutlined /> {ctx.item.checkEnabled ? '关闭在线探测' : '开启在线探测'}
-          </button>
           <button className="ctx-item danger" onClick={() => deleteItem(ctx.item)}>
             <DeleteOutlined /> 删除
           </button>
         </div>
+      )}
+
+      {!loading && sortedGroups.length > 0 && (
+        <button
+          className={`probe-fab ${probing ? 'probing' : ''}`}
+          title="探测所有站点在线状态"
+          onClick={() => probeAll()}
+        >
+          <RadarChartOutlined />
+          <span>{probing ? '探测中…' : '探测'}</span>
+        </button>
       )}
 
       <ItemEditor
